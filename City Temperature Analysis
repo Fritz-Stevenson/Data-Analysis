@@ -1,0 +1,26 @@
+import pandas as pd
+import numpy as np
+# city_temperature.csv found here: 'https://www.kaggle.com/sudalairajkumar/daily-temperature-of-major-cities'
+
+# set up a dataframe by reading the csv file with pandas
+temp_record = pd.read_csv('city_temperature.csv')
+
+# File has empty fields which may complicate data extraction down the line. Filling the na fields with a string 'None' 
+temp_record.fillna('None')
+
+# Always important to start to understand a dataframes' scope if it isn't presented to you. Printing some key elements
+city_list = sorted(list(set(temp_record['City'])))
+region_list = set(list(temp_record['Region']))
+print(city_list, '\n', region_list, '\n', len(city_list), len(temp_record))
+
+# Random flex to narrow down data and get a sense of the proportional scope by region
+cities_in_Africa = sorted(list(set(temp_record['City'].loc[temp_record['Region']=='Africa'])))
+print(len(cities_in_Africa))
+
+# Pivot table exercise to present regional average temperature by month
+pivot_table = pd.pivot_table(temp_record, values='AvgTemperature', index=['Month'], columns=['Region'], aggfunc=np.mean)
+print(pivot_table.head(12))
+
+#Monthly average temperatures for africa came out awfully flat. Let's get a finer picture of the city data in africa
+pivot_table = pd.pivot_table(temp_record, values='AvgTemperature', index=['Region', 'City'], columns=['Month'], aggfunc=np.mean)
+print(pivot_table.head(12))
