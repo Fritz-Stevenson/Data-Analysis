@@ -24,3 +24,64 @@ print(pivot_table.head(12))
 #Monthly average temperatures for africa came out awfully flat. Let's get a finer picture of the city data in africa
 pivot_table = pd.pivot_table(temp_record, values='AvgTemperature', index=['Region', 'City'], columns=['Month'], aggfunc=np.mean)
 print(pivot_table.head(12))
+#Clearly we will need a finer scope and create means and deviations by city and month to isolate outliers
+
+'''The following functions explore outlier information and counts by city or region. It is worth noting that they take considerable time as there is a great deal of 
+iterating over lists and creating slices of the dataframe for mean/standard deviation analysis.'''
+def find_temperature_outliers(city_input):
+    """
+    Argument: recieves a user input for the city of interest for outlier analysis across all time
+    
+    Output: returns a dataframe object for graphing or display."""
+    if city_input not in city_list:
+        print('Either the city of interes is not in the dataset, or it isn't correctly capitalized and spelled')
+    else:
+        full_outlier_dataframe = pd.DataFrame(columns=temp_record.columns)
+        for city in [city_input]:  # city_list:
+            for year in years:
+                for month in months:
+                    if year == 1995:
+                        comparison_set = temp_record['AvgTemperature'].loc[temp_record['City'] == city].loc[temp_record['Year'] == 1995].loc[
+                            temp_record['Month'] == month].values
+                        comp_mean = np.mean(comparison_set)
+                        comp_outlier_ub = comp_mean + np.std(comparison_set)*3
+                        comp_outlier_lb = comp_mean - np.std(comparison_set)*3
+                    else:
+                        comparison_set = temp_record['AvgTemperature'].loc[temp_record['City'] == city].loc[temp_record['Year'] < year].loc[
+                            temp_record['Month'] == month].values
+                        comp_mean = np.mean(comparison_set)
+                        comp_outlier_ub = comp_mean + np.std(comparison_set)*3
+                        comp_outlier_lb = comp_mean - np.std(comparison_set)*3
+                    upper_outliers = temp_record.loc[temp_record['City'] == city].loc[temp_record['Year'] == year].loc[
+                            temp_record['Month'] == month].loc[temp_record['AvgTemperature'] > comp_outlier_ub]
+                    lower_outliers = temp_record.loc[temp_record['City'] == city].loc[temp_record['Year'] == year].loc[
+                            temp_record['Month'] == month].loc[temp_record['AvgTemperature'] < comp_outlier_lb]
+                    full_outlier_dataframe = pd.concat([full_outlier_dataframe, upper_outliers,lower_outliers])
+    return full_outlier_dataframe
+
+'''The goal is to find which region had the largest propotion of instances of statistical outliers for city's daily 
+average temperature in 2020 as calculated by 3 standard deviations above or below the historical monthly average for that
+each city.'''
+def regional_outlier_count():
+    transcript =[]
+    for i in range(len(regions)):
+        region = region_string[i]
+        print(region)
+        count = 0
+        for city in regions[i]:
+            print(city)
+            for month in months:
+                comparison_set = temp_record['AvgTemperature'].loc[temp_record['City'] == city].loc[temp_record[
+                            'Month'] == month].values
+                comp_mean = np.mean(comparison_set)
+                comp_outlier_ub = comp_mean + np.std(comparison_set) * 3
+                comp_outlier_lb = comp_mean - np.std(comparison_set) * 3
+                upper_outliers = temp_record.loc[temp_record['City'] == city].loc[temp_record['Year'] == 2020].loc[
+                    temp_record['Month'] == month].loc[temp_record['AvgTemperature'] > comp_outlier_ub]
+                lower_outliers = temp_record.loc[temp_record['City'] == city].loc[temp_record['Year'] == 2020].loc[
+                    temp_record['Month'] == month].loc[temp_record['AvgTemperature'] < comp_outlier_lb]
+                count += (len(upper_outliers.index) + len(lower_outliers.index))
+        transcript.append(f'{region}: {count/len(regions[i])}')
+    return print('\n'.join(transcript))
+
+regional_outlier_count()
