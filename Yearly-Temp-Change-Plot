@@ -1,0 +1,55 @@
+import pandas as pd
+# This file seeks to visualize the yearly global average and variation of temperatures in cities.
+
+import numpy as np
+from bokeh.plotting import figure, show
+# We will clean the data like we have in other files
+temp_record = pd.read_csv('city_temperature.csv')
+temp_record.fillna('None')
+temp_record = temp_record.loc[temp_record['Year'].isin(range(1995,2021))]
+
+#Our yearly average dataframe we obtained in the Yearly-Analysis-Exploration file
+def all_yearly_averages():
+    return pd.pivot_table(temp_record, values='AvgTemperature', index='Year',
+                          aggfunc=np.average)
+# Yearly standard deviations for temperatures in all cities.                          
+def all_yearly_std():
+    return pd.pivot_table(temp_record, values='AvgTemperature', index=['Year', 'City'],
+                              aggfunc=np.std)
+
+yearly_average_frame = all_yearly_averages()
+
+# converts the deviations for all cities in all years to mean city deviation by year.
+yearly_standard_deviations = pd.pivot_table(all_yearly_std(), values='AvgTemperature', index='Year',
+                          aggfunc=np.average)
+                          
+# rename the standard deviation column so there are no duplicate columns moving forward.
+yearly_standard_deviations.rename(columns={'AvgTemperature': 'AvgStandardDeviation'}, inplace=True)
+
+# concatenate in order to add another column for further manipulation.
+full_frame = pd.concat([yearly_average_frame, yearly_standard_deviations], axis=1)
+
+'''From here we need to create a range within +- 1 standard deviation of the yearly mean. We will create two more columns that will add (or subtract) the years standard 
+deviation to/from the average. This data is significant because it show the noise present in a year. For instance, some cities in some years may have had very cold winters 
+despite having high averages. The display of deviation alludes to the "noise" present in a years weather that is not contributing toward the formation of climate trends.'''
+
+full_frame['Up1STD'] = full_frame['AvgTemperature']+full_frame['AvgStandardDeviation']
+full_frame['Down1STD'] =  full_frame['AvgTemperature']-full_frame['AvgStandardDeviation']
+
+# The x axis will be the years available
+x = yearly_average_frame.index.values
+
+# One y axis variable will be the global average temperatures.
+y = yearly_average_frame['AvgTemperature'].values
+
+# Then to configure the plot meta data
+a = figure(title='Average Temperature and Deviation', plot_width=800, plot_height=500, x_axis_label= 'Years',
+           y_axis_label='Degrees Fahrenheit', x_range=[str(i) for i in x])
+a.title.align ='center'
+
+# First we will create a varea plot for the +-1standard deviation range to underlay the average.
+a.varea(x=[str(i) for i in x], y1=full_frame['Up1STD'].values, y2=full_frame['Down1STD'].values, color='grey',
+        legend_label='1(+-) Standard Deviation Range')
+# Here we create an average temperature line to overlay the deviation range.
+a.line([str(i) for i in x], y, color='red', width=4, legend_label='Global Average Temperature')
+show(a)
