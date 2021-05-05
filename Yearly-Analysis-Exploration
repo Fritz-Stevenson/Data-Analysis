@@ -1,0 +1,97 @@
+# This script tests pandas/numpy functionality and explores differences in yearly temperatures across the globe.
+
+import pandas as pd
+import numpy as np
+from timeit import timeit
+
+# We import and minimally clean the dataset, like in other modules
+temp_record = pd.read_csv('city_temperature.csv')
+temp_record.fillna('None')
+
+'''Here is the first functionality test. Though pandas is built on numpy's cython functionality, is there a difference between calling pandas' mean function and numpy's average?
+we will create 2 functions to calculate a single year's mean avg temperature to find out.
+def yearly_avg_temperature(year):
+    return temp_record['AvgTemperature'].loc[temp_record['Year'] == int(year)].mean()
+def numpy_avg_temperature(year):
+    return np.average(temp_record['AvgTemperature'].loc[temp_record['Year'] == int(year)].values)
+
+# We call the timeit function and find out.
+print(f"10 loops of fx1 at: {timeit('yearly_avg_temperature(2020)', globals=globals(), number=10)} seconds")
+print(f"10 loops of fx2 at: {timeit('numpy_avg_temperature(2020)', globals=globals(), number=10)} seconds")
+# It turns out there is a marginal difference. for 10 loops of each function, the numpy is 15-20% faster.
+
+''' Now we need to find our answer to year over year change and test out more comparative strategies. The first function we create is a pythonic one where we loop over a 
+range and append yearly values to a list which is then returned. For function 2 and 3, we return a list comprehension with the pandas and numpy internals from the last
+functionality test. For the last function we print values from a pivot table'''
+
+def all_yearly_averages_1():
+    all_values = []
+    for i in range(1995, 2021):
+        x = numpy_avg_temperature(i)
+        all_values.append(x)
+    return all_values
+def all_yearly_averages_2():
+    return [temp_record['AvgTemperature'].loc[temp_record['Year'] == i].mean() for i in range(1995, 2021)]
+
+def all_yearly_averages_3():
+    return [np.average(temp_record['AvgTemperature'].loc[temp_record['Year'] == i].values) for i in range(1995, 2021)]
+    
+def all_yearly_averages_4():
+    return pd.pivot_table(temp_record, values='AvgTemperature', index='Year', aggfunc=np.average)['AvgTemperature'][2:].values
+    
+print(f"10 loops of yearly 1 at: {timeit('all_yearly_averages_1()', globals=globals(), number=10)} seconds")
+print(f"10 loops of yearly 2 at: {timeit('all_yearly_averages_2()', globals=globals(), number=10)} seconds")
+print(f"10 loops of yearly 3 at: {timeit('all_yearly_averages_3()', globals=globals(), number=10)} seconds")
+print(f"10 loops of yearly 4 at: {timeit('all_yearly_averages_4()', globals=globals(), number=10)} seconds")
+
+'''All functions have similar capabilities, and 10 loop timeit tests are just above 2 seconds for all of them. It is worth noting that the 4th test, a pivot table, is 
+marginally faster than all of them when it is not reduced to an array. However, it presents some dirty data with incorrect year values. Perhaps this is a blessing as it shows
+us more data to be cleaned.'''
+
+print(len(temp_record.index))
+temp_record = temp_record.loc[temp_record['Year'].isin(range(1995,2021))]
+print(len(temp_record.index))
+
+# With this we've eliminated 420 dirty rows.
+
+# And now, with a slightly modified version of yearly_averages_4, we can print a clean table of yearly averages.
+
+def all_yearly_averages():
+    return pd.pivot_table(temp_record, values='AvgTemperature', index='Year',
+                          aggfunc=np.average)
+# print(all_yearly_averages())
+
+#This is not the full extent of the information we can extract from the dataset about yearly temperatures; let's find out about the standard deviation:
+
+def all_yearly_std():
+    return pd.pivot_table(temp_record, values='AvgTemperature', index=['Year'],
+                              aggfunc=np.std)
+# print(all_yearly_std())
+
+'''What is wrong with the data and function above? You may notice that not only is the standard deviation quite large for most years, but there seems to be a distinct outlier
+in year 2020. Is there a problem with our data?'''
+
+# Let's check the number of unique cities present in each year to check the congruity of data.
+def get_yearly_city_count():
+    for year in range(1995, 2021):
+        city_count = len(list(set(temp_record['City'].loc[temp_record['Year'] == year].values)))
+        print(f'{year} city count: {city_count}')
+# get_yearly_city_count()
+
+# While the number of cities decreases slightly over time, it does not correlate to a diminishing variation, as that is only distinctly present in 2020.
+
+''' Are there any other problems present? If you look closely at the all_yearly_std() function, we are finding the standard deviation for values grouped by year, for 
+all cities. This obscures the variance in regional or local places: santa fe could post 70 degree days all year while addis ababa might swing between 20 and 100 daily. None
+of this is captured. We need to find average variance by city by year. We could write a confusing loop, but we already laid out the pieces to accomplish this easily.'''
+
+def new_all_yearly_std():
+    return pd.pivot_table(temp_record, values='AvgTemperature', index=['Year', 'City'],
+                              aggfunc=np.std)
+                              
+print(pd.pivot_table(new_all_yearly_std(), values='AvgTemperature', index='Year',
+                          aggfunc=np.average))
+
+''' You can see that the data fed into the pivot table is actually a separate standard deviation pivot table grouped by year and city. These city temperature standard 
+deviations are then simplified into only year groupings and an average is applied to the sets of standard deviations. The final result is the average for all cities' standard 
+deviations of daily temperatures. The result is similar, but now more precise. In the next exercise we will plot this data in the most descriptive way possible.'''
+
