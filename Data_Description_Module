@@ -1,0 +1,46 @@
+'''This Data Cleaning and Meta-analysis (DCM) module aims to handle the rote tasks of cleaning and analyzing
+inconsistencies in data sets. It is intended to be dragged and dropped into other data packages for streamlining
+data analysis projects.
+
+Reliant on Pandas and Numpy
+
+Input 'safe' or 'unsafe' as second argument to control display limiters. Unsafe changes max rows, columns ->None
+'''
+import pandas as pd
+
+class DCM:
+    def __init__(self, csv, safety):
+        self.safety_input = safety
+        self.csv = pd.read_csv(csv)
+        self.set_safety()
+    def set_safety(self):
+        if self.safety_input == 'unsafe':
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.max_rows', None)
+            pd.set_option('display.max_colwidth', -1)
+
+    def full(self):
+        self.info()
+        self.column_value_counts()
+        self.column_type_errors()
+        
+    def info(self):
+        self.csv.info()
+        print(self.csv.isna().sum())
+        self.csv.describe()
+
+    def column_type_errors(self):
+        column_errors = []
+        for column in self.csv.columns:
+            column_type_count = len(list(set([type(i) for i in self.csv[column]])))
+            column_types = list(set([type(i) for i in self.csv[column]]))
+            if column_type_count > 1:
+                column_errors.append(f'Column:{column} with types: {column_types}')
+        print('\n'.join(column_errors))
+
+    def column_value_counts(self):
+        for column in self.csv.columns:
+            if self.csv[column].dtype in ['object']:
+                print(f'{column} \n{self.csv[column].value_counts()}\n')
+            else:
+                print(column, f'Unique values: {len(pd.unique(self.csv[column]))}')
