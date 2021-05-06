@@ -1,14 +1,17 @@
-'''This Data Cleaning and Meta-analysis (DCM) module aims to handle the rote tasks of cleaning and analyzing
-inconsistencies in data sets. It is intended to be dragged and dropped into other data packages for streamlining
-data analysis projects.
-
-Reliant on Pandas and Numpy
-
-Input 'safe' or 'unsafe' as second argument to control display limiters. Unsafe changes max rows, columns ->None
-'''
+--python3
 import pandas as pd
 
-class DCM:
+class DDM:
+    """This Data Description and Meta-analysis (DDM) module aims to automate descriptive analysis of data to prepare the 
+    user for cleaning tasks.
+    
+    Arguments: 
+        csv: string of location for the analysis csv
+        safety: string 'safe' or 'unsafe' to control row/column limiters
+    
+    Use: Script can first be dragged and dropped into project directory, then imported into other scripts if needed.
+    Individual functions can be called, or full() which calls all description functions
+    """
     def __init__(self, csv, safety):
         self.safety_input = safety
         self.csv = pd.read_csv(csv)
