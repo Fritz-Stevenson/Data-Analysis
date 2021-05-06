@@ -30,7 +30,7 @@ class DDM:
     def info(self):
         self.csv.info()
         print(self.csv.isna().sum())
-        self.csv.describe()
+        print(self.csv.describe())
 
     def column_type_errors(self):
         column_errors = []
