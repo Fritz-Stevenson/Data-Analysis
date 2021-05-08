@@ -41,6 +41,12 @@ df['gender'].loc[df['gender'] == 'Female'] = 1
 df2['gender'].loc[df2['gender'].isin(['Male', 'Other'])] = 0
 df2['gender'].loc[df2['gender'] == 'Female'] = 1
 
+'''Groupby, much like a pivot table, shows us the difference in mean values between stroke victims and the rest of the 
+population.'''
+print(df2.groupby(['stroke']).mean())
+''' Stroke victims were 4 times more likely to have had heart disease, had nearly 4 times the hypertension on average, 
+were 26 years older on average, and had nearly 33% higher glucose levels'''
+
 
 '''
 Now begins the first knneighbour test, where we experiment with how the number and choice of categories affects the 
